@@ -1711,30 +1711,48 @@ function loadKakaoSDK() {
 async function renderNearby() {
   await loadKakaoSDK();
 
-  // 지도 초기화 (한 번만)
+  // 지도 초기화 (한 번만) - 서울 시청 기본값
   if (!kakaoMap) {
     const container = document.getElementById('kakao-map');
     const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 4 };
     kakaoMap = new kakao.maps.Map(container, options);
   }
 
-  // GPS 위치 요청
+  // 지도 크기 재계산 (화면 전환 후 깨짐 방지)
+  kakaoMap.relayout();
+
   document.getElementById('nearby-count').textContent = '📍 현재 위치를 찾는 중…';
-  try {
-    const pos = await new Promise((res, rej) =>
-      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
-    );
-    userLat = pos.coords.latitude;
-    userLng = pos.coords.longitude;
-    searchNearby();
-  } catch(e) {
-    document.getElementById('nearby-count').textContent = '⚠️ 위치 권한을 허용해주세요';
-    document.getElementById('nearby-list').innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📍</div>
-        <div class="empty-text">위치 권한이 필요해요.<br>브라우저 설정에서 위치 허용 후 다시 시도해주세요.</div>
-      </div>`;
+  document.getElementById('nearby-list').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📍</div>
+      <div class="empty-text">위치 권한 팝업이 뜨면 <strong>허용</strong>을 눌러주세요!</div>
+    </div>`;
+
+  // GPS 위치 요청
+  if (!navigator.geolocation) {
+    document.getElementById('nearby-count').textContent = '⚠️ 위치 기능을 지원하지 않는 브라우저예요';
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      searchNearby();
+    },
+    (err) => {
+      document.getElementById('nearby-count').textContent = '⚠️ 위치 권한을 허용해주세요';
+      document.getElementById('nearby-list').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📍</div>
+          <div class="empty-text">위치 권한이 거부됐어요.<br>브라우저 주소창 왼쪽 🔒 아이콘을 눌러<br>위치 권한을 <strong>허용</strong>으로 바꿔주세요.</div>
+        </div>
+        <div style="padding:0 0 12px;">
+          <button class="btn-primary" onclick="renderNearby()">🔄 다시 시도</button>
+        </div>`;
+    },
+    { timeout: 10000, enableHighAccuracy: false }
+  );
 }
 
 function searchNearby() {
