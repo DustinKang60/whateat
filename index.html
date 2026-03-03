@@ -953,9 +953,9 @@ function getMealTypeInfo(id) {
 }
 
 // ══════════════════════════════════════════════
-//  5. 화면 전환
+//  5. 화면 전환 (뒤로가기 지원)
 // ══════════════════════════════════════════════
-function goScreen(id) {
+function goScreen(id, pushHistory = true) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id === 'screen-home') renderHome();
@@ -963,7 +963,34 @@ function goScreen(id) {
   if (id === 'screen-roulette') renderRoulette();
   if (id === 'screen-situation') renderSituation();
   if (id === 'screen-health') renderHealth();
+
+  // 홈이 아닐 때만 history에 push
+  if (pushHistory && id !== 'screen-home') {
+    history.pushState({ screen: id }, '', '');
+  }
 }
+
+// 뒤로가기 버튼 감지
+window.addEventListener('popstate', (e) => {
+  // 바텀시트가 열려있으면 시트 닫기
+  if (document.getElementById('record-sheet').classList.contains('open')) {
+    closeSheet();
+    history.pushState({}, '', ''); // 다시 스택 유지
+    return;
+  }
+  // 홈이 아닌 화면이면 홈으로
+  const current = document.querySelector('.screen.active');
+  if (current && current.id !== 'screen-home') {
+    goScreen('screen-home', false);
+  } else {
+    // 홈에서 뒤로가기 → 앱 종료 확인
+    if (confirm('WhatEat을 종료할까요?')) {
+      history.back();
+    } else {
+      history.pushState({}, '', '');
+    }
+  }
+});
 
 // ══════════════════════════════════════════════
 //  6. 홈 / 캘린더 렌더링
