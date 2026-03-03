@@ -604,7 +604,7 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
           </div>
           <div class="feature-arrow">›</div>
         </div>
-        <div class="feature-card" onclick="showToast('카카오맵 API 키 설정 후 사용 가능해요!')">
+        <div class="feature-card" onclick="goScreen('screen-nearby')">
           <div class="feature-icon fi-blue">📍</div>
           <div class="feature-info">
             <div class="feature-name">내 주변 맛집</div>
@@ -777,6 +777,37 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
   <!-- ══════════════════════════════════
        바텀시트: 식사 기록 추가/편집
   ══════════════════════════════════ -->
+  <!-- 화면 6: 내 주변 맛집 -->
+  <div class="screen" id="screen-nearby">
+    <div class="topbar">
+      <button class="topbar-btn" onclick="goScreen('screen-home')">← 홈</button>
+      <span class="topbar-title">📍 내 주변 맛집</span>
+      <div style="width:44px"></div>
+    </div>
+    <div style="padding:12px 14px 8px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0;">
+      <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;" id="nearby-filters">
+        <div class="filter-chip on" onclick="setNearbyCategory('FD6', this)">🍽️ 음식점</div>
+        <div class="filter-chip" onclick="setNearbyCategory('CE7', this)">☕ 카페</div>
+        <div class="filter-chip" onclick="setNearbyCategory('korean', this)">🍚 한식</div>
+        <div class="filter-chip" onclick="setNearbyCategory('chinese', this)">🥢 중식</div>
+        <div class="filter-chip" onclick="setNearbyCategory('japanese', this)">🍱 일식</div>
+        <div class="filter-chip" onclick="setNearbyCategory('western', this)">🍝 양식</div>
+      </div>
+    </div>
+    <div id="kakao-map" style="width:100%; height:240px; flex-shrink:0; background:var(--surface2);"></div>
+    <div class="scroll-body">
+      <div style="padding:10px 16px 6px; font-size:12px; color:var(--muted); font-weight:700;" id="nearby-count">위치 정보를 불러오는 중…</div>
+      <div id="nearby-list" style="padding:0 14px; display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goScreen('screen-home')"><div class="nav-icon">🏠</div><div class="nav-label">홈</div></div>
+      <div class="nav-item" onclick="goScreen('screen-records')"><div class="nav-icon">📋</div><div class="nav-label">기록</div></div>
+      <div class="nav-item" onclick="goScreen('screen-roulette')"><div class="nav-icon">🎡</div><div class="nav-label">룰렛</div></div>
+      <div class="nav-item" onclick="goScreen('screen-situation')"><div class="nav-icon">🌦️</div><div class="nav-label">추천</div></div>
+      <div class="nav-item" onclick="goScreen('screen-health')"><div class="nav-icon">📊</div><div class="nav-label">건강</div></div>
+    </div>
+  </div>
+
   <div class="sheet-overlay" id="record-sheet" onclick="closeSheetOnBg(event)">
     <div class="sheet-body">
       <div class="sheet-handle"></div>
@@ -963,6 +994,7 @@ function goScreen(id, pushHistory = true) {
   if (id === 'screen-roulette') renderRoulette();
   if (id === 'screen-situation') renderSituation();
   if (id === 'screen-health') renderHealth();
+  if (id === 'screen-nearby') renderNearby();
 
   // 홈이 아닐 때만 history에 push
   if (pushHistory && id !== 'screen-home') {
@@ -1653,6 +1685,129 @@ function renderHealth() {
     });
   }
   document.getElementById('top-foods').innerHTML = topHtml;
+}
+
+// ══════════════════════════════════════════════
+//  12-1. 내 주변 맛집 (카카오맵)
+// ══════════════════════════════════════════════
+const KAKAO_APP_KEY = 'e9b1d65b1b21db5cd8e7f188476b6fcc';
+let kakaoMap = null;
+let nearbyCategory = 'FD6';
+let userLat = null, userLng = null;
+let kakaoReady = false;
+
+function loadKakaoSDK() {
+  return new Promise((resolve) => {
+    if (kakaoReady) { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services&autoload=false`;
+    script.onload = () => {
+      kakao.maps.load(() => { kakaoReady = true; resolve(); });
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function renderNearby() {
+  await loadKakaoSDK();
+
+  // 지도 초기화 (한 번만)
+  if (!kakaoMap) {
+    const container = document.getElementById('kakao-map');
+    const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 4 };
+    kakaoMap = new kakao.maps.Map(container, options);
+  }
+
+  // GPS 위치 요청
+  document.getElementById('nearby-count').textContent = '📍 현재 위치를 찾는 중…';
+  try {
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+    );
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    searchNearby();
+  } catch(e) {
+    document.getElementById('nearby-count').textContent = '⚠️ 위치 권한을 허용해주세요';
+    document.getElementById('nearby-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📍</div>
+        <div class="empty-text">위치 권한이 필요해요.<br>브라우저 설정에서 위치 허용 후 다시 시도해주세요.</div>
+      </div>`;
+  }
+}
+
+function searchNearby() {
+  if (!kakaoReady || !userLat) return;
+
+  const latlng = new kakao.maps.LatLng(userLat, userLng);
+  kakaoMap.setCenter(latlng);
+
+  // 내 위치 마커
+  new kakao.maps.Marker({
+    map: kakaoMap,
+    position: latlng,
+    title: '현재 위치',
+  });
+
+  // 카테고리 검색
+  const ps = new kakao.maps.services.Places(kakaoMap);
+  const keyword = {
+    'korean': '한식', 'chinese': '중식',
+    'japanese': '일식', 'western': '양식',
+  }[nearbyCategory];
+
+  const searchOpt = { location: latlng, radius: 500, sort: kakao.maps.services.SortBy.DISTANCE };
+
+  function callback(data, status) {
+    if (status !== kakao.maps.services.Status.OK) {
+      document.getElementById('nearby-count').textContent = '검색 결과가 없어요';
+      document.getElementById('nearby-list').innerHTML = '';
+      return;
+    }
+
+    // 기존 마커 제거 후 재생성
+    kakaoMap.setLevel(4);
+
+    document.getElementById('nearby-count').textContent = `🔍 반경 500m 내 ${data.length}개 식당`;
+
+    let html = '';
+    data.slice(0, 15).forEach((place, i) => {
+      const dist = place.distance ? `${place.distance}m` : '';
+      const marker = new kakao.maps.Marker({
+        map: kakaoMap,
+        position: new kakao.maps.LatLng(place.y, place.x),
+        title: place.place_name,
+      });
+
+      html += `<div style="background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; cursor:pointer;"
+        onclick="openRecordSheet('${dateKey(new Date())}', 'l'); setTimeout(()=>{document.getElementById('sh-food').value=''; document.getElementById('sh-place').value='${place.place_name.replace(/'/g,'')}';},300)">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:32px; height:32px; background:rgba(255,107,53,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:var(--accent); flex-shrink:0;">${i+1}</div>
+          <div style="flex:1;">
+            <div style="font-size:14px; font-weight:700; color:var(--text); margin-bottom:2px;">${place.place_name}</div>
+            <div style="font-size:11px; color:var(--muted);">${place.category_name.split(' > ').pop()} · ${dist}</div>
+            <div style="font-size:10px; color:var(--border); margin-top:2px;">${place.road_address_name || place.address_name}</div>
+          </div>
+          <a href="${place.place_url}" target="_blank" style="font-size:11px; color:var(--accent); font-weight:700; text-decoration:none; flex-shrink:0;">지도 ›</a>
+        </div>
+      </div>`;
+    });
+    document.getElementById('nearby-list').innerHTML = html;
+  }
+
+  if (keyword) {
+    ps.keywordSearch(keyword + ' 음식점', callback, searchOpt);
+  } else {
+    ps.categorySearch(nearbyCategory, callback, searchOpt);
+  }
+}
+
+function setNearbyCategory(cat, el) {
+  nearbyCategory = cat;
+  document.querySelectorAll('#nearby-filters .filter-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  searchNearby();
 }
 
 // ══════════════════════════════════════════════
