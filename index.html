@@ -376,6 +376,7 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
 .filter-chip {
   padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border);
   border-radius: 20px; font-size: 12px; color: var(--muted); cursor: pointer; font-weight: 600;
+  white-space: nowrap; flex-shrink: 0;
 }
 .filter-chip.on { background: rgba(255,107,53,0.12); border-color: var(--accent); color: var(--accent); }
 
@@ -546,7 +547,7 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
       <div class="home-logo">What<span>Eat</span></div>
       <div class="header-actions">
         <button class="icon-btn" onclick="showToast('알림 기능 준비중!')">🔔</button>
-        <button class="icon-btn" onclick="goScreen('screen-health')">📊</button>
+        <button class="icon-btn" onclick="goScreen('screen-settings')">⚙️</button>
       </div>
     </div>
 
@@ -808,6 +809,79 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
     </div>
   </div>
 
+  <!-- 설정 화면 -->
+  <div class="screen" id="screen-settings">
+    <div class="topbar">
+      <button class="topbar-btn" onclick="goScreen('screen-home')">← 홈</button>
+      <span class="topbar-title">⚙️ 설정</span>
+      <div style="width:44px"></div>
+    </div>
+    <div class="scroll-body">
+      <div class="section-title">화면 설정</div>
+
+      <!-- 다크/라이트 모드 -->
+      <div class="card" style="padding:16px;">
+        <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:12px;">🌙 화면 모드</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div class="mode-btn active" id="mode-dark" onclick="setTheme('dark')"
+            style="padding:12px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--accent); background:rgba(255,107,53,0.08);">
+            <div style="font-size:22px;">🌙</div>
+            <div style="font-size:12px; font-weight:700; color:var(--accent); margin-top:4px;">다크 모드</div>
+          </div>
+          <div class="mode-btn" id="mode-light" onclick="setTheme('light')"
+            style="padding:12px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--border); background:var(--surface2);">
+            <div style="font-size:22px;">☀️</div>
+            <div style="font-size:12px; font-weight:700; color:var(--muted); margin-top:4px;">라이트 모드</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 글씨 크기 -->
+      <div class="card" style="padding:16px;">
+        <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:12px;">🔤 글씨 크기</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div onclick="setFontSize('small')" id="font-small"
+            style="padding:12px 8px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--border); background:var(--surface2);">
+            <div style="font-size:12px; font-weight:700; color:var(--muted);">작게</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">가나다</div>
+          </div>
+          <div onclick="setFontSize('medium')" id="font-medium"
+            style="padding:12px 8px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--accent); background:rgba(255,107,53,0.08);">
+            <div style="font-size:13px; font-weight:700; color:var(--accent);">보통</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:2px;">가나다</div>
+          </div>
+          <div onclick="setFontSize('large')" id="font-large"
+            style="padding:12px 8px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid var(--border); background:var(--surface2);">
+            <div style="font-size:15px; font-weight:700; color:var(--muted);">크게</div>
+            <div style="font-size:13px; color:var(--muted); margin-top:2px;">가나다</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">앱 정보</div>
+      <div class="card" style="padding:16px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <img src="/whateat/icons/icon-192x192.png" style="width:48px; height:48px; border-radius:12px;"/>
+          <div>
+            <div style="font-size:15px; font-weight:700; color:var(--text);">WhatEat</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">v1.0 · 작은앱공방</div>
+            <div style="font-size:11px; color:var(--muted);">오늘 뭐 먹을지 고민 해결!</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 데이터 초기화 -->
+      <div class="card" style="padding:16px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px;">🗑️ 데이터 관리</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">저장된 모든 식사 기록을 삭제합니다.</div>
+        <button onclick="resetAllData()"
+          style="width:100%; padding:11px; background:rgba(239,71,111,0.1); border:1px solid rgba(239,71,111,0.3); border-radius:12px; color:var(--pink); font-size:13px; font-weight:700;">
+          전체 기록 초기화
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div class="sheet-overlay" id="record-sheet" onclick="closeSheetOnBg(event)">
     <div class="sheet-body">
       <div class="sheet-handle"></div>
@@ -995,6 +1069,7 @@ function goScreen(id, pushHistory = true) {
   if (id === 'screen-situation') renderSituation();
   if (id === 'screen-health') renderHealth();
   if (id === 'screen-nearby') renderNearby();
+  if (id === 'screen-settings') renderSettings();
 
   // 홈이 아닐 때만 history에 push
   if (pushHistory && id !== 'screen-home') {
@@ -1695,6 +1770,12 @@ let kakaoMap = null;
 let nearbyCategory = 'FD6';
 let userLat = null, userLng = null;
 let kakaoReady = false;
+let nearbyMarkers = []; // 마커 배열
+
+function clearMarkers() {
+  nearbyMarkers.forEach(m => m.setMap(null));
+  nearbyMarkers = [];
+}
 
 function loadKakaoSDK() {
   return new Promise((resolve) => {
@@ -1762,11 +1843,12 @@ function searchNearby() {
   kakaoMap.setCenter(latlng);
 
   // 내 위치 마커
-  new kakao.maps.Marker({
+  const myMarker = new kakao.maps.Marker({
     map: kakaoMap,
     position: latlng,
     title: '현재 위치',
   });
+  nearbyMarkers.push(myMarker);
 
   // 카테고리 검색
   const ps = new kakao.maps.services.Places(kakaoMap);
@@ -1785,6 +1867,7 @@ function searchNearby() {
     }
 
     // 기존 마커 제거 후 재생성
+    clearMarkers();
     kakaoMap.setLevel(4);
 
     document.getElementById('nearby-count').textContent = `🔍 반경 500m 내 ${data.length}개 식당`;
@@ -1797,6 +1880,7 @@ function searchNearby() {
         position: new kakao.maps.LatLng(place.y, place.x),
         title: place.place_name,
       });
+      nearbyMarkers.push(marker);
 
       html += `<div style="background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; cursor:pointer;"
         onclick="openRecordSheet('${dateKey(new Date())}', 'l'); setTimeout(()=>{document.getElementById('sh-food').value=''; document.getElementById('sh-place').value='${place.place_name.replace(/'/g,'')}';},300)">
@@ -1829,6 +1913,99 @@ function setNearbyCategory(cat, el) {
 }
 
 // ══════════════════════════════════════════════
+//  설정 화면
+// ══════════════════════════════════════════════
+function renderSettings() {
+  const theme = localStorage.getItem('whateat_theme') || 'dark';
+  const fontSize = localStorage.getItem('whateat_fontsize') || 'medium';
+  updateThemeUI(theme);
+  updateFontUI(fontSize);
+}
+
+function setTheme(mode) {
+  localStorage.setItem('whateat_theme', mode);
+  applyTheme(mode);
+  updateThemeUI(mode);
+}
+
+function applyTheme(mode) {
+  const root = document.documentElement;
+  if (mode === 'light') {
+    root.style.setProperty('--bg',       '#f5f5f7');
+    root.style.setProperty('--surface',  '#ffffff');
+    root.style.setProperty('--surface2', '#f0f0f5');
+    root.style.setProperty('--surface3', '#e5e5ea');
+    root.style.setProperty('--border',   '#d1d1d6');
+    root.style.setProperty('--text',     '#1c1c1e');
+    root.style.setProperty('--muted',    '#6e6e73');
+  } else {
+    root.style.setProperty('--bg',       '#0d1117');
+    root.style.setProperty('--surface',  '#161b27');
+    root.style.setProperty('--surface2', '#1e2535');
+    root.style.setProperty('--surface3', '#252d42');
+    root.style.setProperty('--border',   '#2a3350');
+    root.style.setProperty('--text',     '#e8eaf6');
+    root.style.setProperty('--muted',    '#6b7a99');
+  }
+}
+
+function updateThemeUI(mode) {
+  const dark  = document.getElementById('mode-dark');
+  const light = document.getElementById('mode-light');
+  if (!dark) return;
+  if (mode === 'dark') {
+    dark.style.borderColor  = 'var(--accent)';
+    dark.style.background   = 'rgba(255,107,53,0.08)';
+    dark.querySelector('div:last-child').style.color = 'var(--accent)';
+    light.style.borderColor = 'var(--border)';
+    light.style.background  = 'var(--surface2)';
+    light.querySelector('div:last-child').style.color = 'var(--muted)';
+  } else {
+    light.style.borderColor = 'var(--accent)';
+    light.style.background  = 'rgba(255,107,53,0.08)';
+    light.querySelector('div:last-child').style.color = 'var(--accent)';
+    dark.style.borderColor  = 'var(--border)';
+    dark.style.background   = 'var(--surface2)';
+    dark.querySelector('div:last-child').style.color = 'var(--muted)';
+  }
+}
+
+function setFontSize(size) {
+  localStorage.setItem('whateat_fontsize', size);
+  applyFontSize(size);
+  updateFontUI(size);
+}
+
+function applyFontSize(size) {
+  const sizes = { small: '14px', medium: '16px', large: '18px' };
+  document.documentElement.style.fontSize = sizes[size] || '16px';
+}
+
+function updateFontUI(size) {
+  ['small','medium','large'].forEach(s => {
+    const el = document.getElementById(`font-${s}`);
+    if (!el) return;
+    if (s === size) {
+      el.style.borderColor = 'var(--accent)';
+      el.style.background  = 'rgba(255,107,53,0.08)';
+      el.querySelector('div').style.color = 'var(--accent)';
+    } else {
+      el.style.borderColor = 'var(--border)';
+      el.style.background  = 'var(--surface2)';
+      el.querySelector('div').style.color = 'var(--muted)';
+    }
+  });
+}
+
+function resetAllData() {
+  if (!confirm('모든 식사 기록을 삭제할까요?\n이 작업은 되돌릴 수 없어요.')) return;
+  state.records = [];
+  saveData();
+  showToast('전체 기록이 초기화됐어요 🗑️');
+  goScreen('screen-home');
+}
+
+// ══════════════════════════════════════════════
 //  13. 서비스워커 등록
 // ══════════════════════════════════════════════
 if ('serviceWorker' in navigator) {
@@ -1846,6 +2023,9 @@ if ('serviceWorker' in navigator) {
   state.calYear  = now.getFullYear();
   state.calMonth = now.getMonth();
   state.selectedDate = dateKey(now);
+  // 저장된 설정 적용
+  applyTheme(localStorage.getItem('whateat_theme') || 'dark');
+  applyFontSize(localStorage.getItem('whateat_fontsize') || 'medium');
   renderHome();
 })();
 </script>
