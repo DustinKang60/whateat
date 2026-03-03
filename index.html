@@ -1861,8 +1861,13 @@ function searchNearby() {
 
   function callback(data, status) {
     if (status !== kakao.maps.services.Status.OK) {
+      clearMarkers(); // 결과 없으면 마커 전부 제거
       document.getElementById('nearby-count').textContent = '검색 결과가 없어요';
-      document.getElementById('nearby-list').innerHTML = '';
+      document.getElementById('nearby-list').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🍽️</div>
+          <div class="empty-text">반경 500m 내 해당 음식점이 없어요</div>
+        </div>`;
       return;
     }
 
