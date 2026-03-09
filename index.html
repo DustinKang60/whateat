@@ -870,6 +870,26 @@ input, textarea, select { font-size: 16px; font-family: var(--ff); }
         </div>
       </div>
 
+      <!-- 데이터 내보내기/가져오기 -->
+      <div class="card" style="padding:16px; margin-bottom:12px;">
+        <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px;">📤 데이터 백업 / 복원</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">식사 기록을 JSON 파일로 저장하거나 불러옵니다.</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button onclick="exportData()"
+            style="width:100%; padding:11px; background:rgba(6,214,160,0.1); border:1px solid rgba(6,214,160,0.3); border-radius:12px; color:var(--accent3); font-size:13px; font-weight:700;">
+            📤 JSON으로 내보내기
+          </button>
+          <button onclick="document.getElementById('import-file').click()"
+            style="width:100%; padding:11px; background:rgba(17,138,178,0.1); border:1px solid rgba(17,138,178,0.3); border-radius:12px; color:var(--accent4); font-size:13px; font-weight:700;">
+            📥 JSON에서 가져오기
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)"/>
+          <div style="font-size:10px; color:var(--muted); text-align:center; line-height:1.6;">
+            가져오기 시 기존 기록에 추가됩니다 (중복 제외)
+          </div>
+        </div>
+      </div>
+
       <!-- 데이터 초기화 -->
       <div class="card" style="padding:16px; margin-bottom:20px;">
         <div style="font-size:13px; font-weight:700; color:var(--text); margin-bottom:8px;">🗑️ 데이터 관리</div>
@@ -2000,6 +2020,78 @@ function updateFontUI(size) {
       el.querySelector('div').style.color = 'var(--muted)';
     }
   });
+}
+
+function exportData() {
+  if (state.records.length === 0) {
+    showToast('내보낼 기록이 없어요!');
+    return;
+  }
+
+  const exportObj = {
+    version: '1.0',
+    exportedAt: new Date().toISOString(),
+    count: state.records.length,
+    records: state.records.map(r => ({
+      ...r,
+      date: r.date instanceof Date ? r.date.toISOString() : r.date,
+    })),
+  };
+
+  const json = JSON.stringify(exportObj, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = dateKey(new Date()).replace(/-/g, '');
+  a.href = url;
+  a.download = `whateat_backup_${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`${state.records.length}개 기록을 내보냈어요 📤`);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+
+      // 유효성 검사
+      if (!parsed.records || !Array.isArray(parsed.records)) {
+        showToast('올바른 WhatEat 백업 파일이 아니에요!');
+        return;
+      }
+
+      // 기존 ID 목록
+      const existingIds = new Set(state.records.map(r => r.id));
+      let addedCount = 0;
+
+      parsed.records.forEach(r => {
+        // 중복 ID 제외
+        if (existingIds.has(r.id)) return;
+        state.records.push({
+          ...r,
+          date: new Date(r.date),
+        });
+        existingIds.add(r.id);
+        addedCount++;
+      });
+
+      saveData();
+      showToast(`${addedCount}개 기록을 가져왔어요 📥`);
+      renderHome();
+
+    } catch(err) {
+      showToast('파일을 읽는 중 오류가 발생했어요!');
+    }
+
+    // 파일 input 초기화 (같은 파일 재선택 가능하도록)
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 function resetAllData() {
