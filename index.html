@@ -1564,17 +1564,19 @@ function drawWheel() {
     ctx.restore();
   });
 
-  // 결과: drawWheel과 완전히 동일한 start 계산으로 포인터(12시=-π/2) 위치 섹션 탐색
+  // 결과: 포인터(12시=-π/2)가 가리키는 섹션 탐색
+  // s = angle + i*slice (- π/2 없음, pointer의 -π/2가 12시를 의미)
   const pointer = -Math.PI / 2;
   let resultIdx = 0;
   let minDiff = TWO_PI;
   for (let i = 0; i < foods.length; i++) {
-    const s = angle + i * slice - Math.PI / 2;
+    const s = angle + i * slice;
     let diff = (pointer - s) % TWO_PI;
     if (diff < 0) diff += TWO_PI;
     if (diff < minDiff) { minDiff = diff; resultIdx = i; }
   }
-  return foods[resultIdx];
+  const offset = Math.round(foods.length / 4);
+  return foods[(resultIdx - offset + foods.length) % foods.length];
 }
 
 function spinWheel() {
