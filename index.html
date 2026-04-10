@@ -1588,9 +1588,27 @@ function spinWheel() {
   state.isSpinning = true;
   document.getElementById('spin-btn').disabled = true;
 
-  const totalAngle = (Math.PI * 2 * (6 + Math.random() * 4)); // 6~10바퀴
+  // 1. 랜덤으로 결과 섹터 뽑기
+  const resultIdx = Math.floor(Math.random() * foods.length);
+  state.rouletteResult = foods[resultIdx];
+
+  // 2. 해당 섹터가 정확히 12시(-π/2)에 오도록 목표 각도 계산
+  // drawWheel: 섹터 i의 중앙 = wheelAngle + i*slice - π/2 + slice/2
+  // 이 값이 -π/2 가 되려면:
+  // wheelAngle + i*slice + slice/2 = 0
+  // wheelAngle = -(i + 0.5) * slice
+  const TWO_PI = Math.PI * 2;
+  const slice = TWO_PI / foods.length;
+  const targetAngle = -(resultIdx + 0.5) * slice;
+
+  // 3. 현재 각도에서 목표까지 6~10바퀴 돌기
+  const currentAngle = state.wheelAngle;
+  const fullRotations = Math.PI * 2 * (6 + Math.floor(Math.random() * 4));
+  // 목표각도를 현재보다 큰 값으로 맞추기
+  let endAngle = targetAngle + fullRotations;
+  while (endAngle < currentAngle + Math.PI * 2 * 6) endAngle += TWO_PI;
+
   const duration = 4000;
-  const startAngle = state.wheelAngle;
   const startTime = performance.now();
 
   function easeOut(t) { return 1 - Math.pow(1-t, 3); }
@@ -1598,18 +1616,15 @@ function spinWheel() {
   function animate(now) {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    state.wheelAngle = startAngle + totalAngle * easeOut(progress);
+    state.wheelAngle = currentAngle + (endAngle - currentAngle) * easeOut(progress);
     drawWheel();
 
     if (progress < 1) {
       wheelAnimId = requestAnimationFrame(animate);
     } else {
+      state.wheelAngle = endAngle;
       state.isSpinning = false;
       document.getElementById('spin-btn').disabled = false;
-
-      // 결과 계산 - drawWheel이 직접 반환한 값 사용 (100% 일치 보장)
-      state.rouletteResult = drawWheel();
-
       document.getElementById('result-food').textContent = state.rouletteResult;
       document.getElementById('result-label').textContent = '🎯 오늘의 추천 메뉴!';
       document.getElementById('result-sub').textContent = '마음에 드시나요? 아니면 다시 돌려보세요';
