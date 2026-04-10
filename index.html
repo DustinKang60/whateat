@@ -1532,7 +1532,7 @@ function drawWheel() {
   ctx.stroke();
 
   foods.forEach((food, i) => {
-    const start = state.wheelAngle + i * slice - Math.PI/2;
+    const start = state.wheelAngle + i * slice;
     const end = start + slice;
 
     // 섹션
@@ -1589,9 +1589,9 @@ function spinWheel() {
       document.getElementById('spin-btn').disabled = false;
 
       // 결과 계산
-      // drawWheel: 섹션 i의 시작각 = wheelAngle + i*slice - π/2
-      // 포인터는 상단(-π/2)을 가리킴
-      // (-π/2 - wheelAngle)을 양수 각도로 정규화 → 몇 번째 섹션인지 계산
+      // drawWheel: 섹션 i의 시작각 = wheelAngle + i*slice
+      // 포인터는 상단(-π/2) 고정
+      // 포인터가 몇 번째 섹션에 있는지: (-π/2 - wheelAngle)을 [0,2π)로 정규화
       const slice = (Math.PI * 2) / foods.length;
       const relAngle = ((-Math.PI / 2 - state.wheelAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
       const idx = Math.floor(relAngle / slice) % foods.length;
