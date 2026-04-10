@@ -1550,12 +1550,12 @@ function drawWheel() {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(start + slice/2);
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(13, 200/foods.length + 4)}px 'Noto Sans KR', sans-serif`;
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 3;
-    ctx.fillText(food.length > 5 ? food.slice(0,5)+'…' : food, 10, 5);
+    ctx.fillText(food.length > 5 ? food.slice(0,5)+'…' : food, r / 2, 5);
     ctx.restore();
   });
 
