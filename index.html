@@ -1532,7 +1532,7 @@ function drawWheel() {
   ctx.stroke();
 
   foods.forEach((food, i) => {
-    const start = state.wheelAngle + i * slice;
+    const start = state.wheelAngle + i * slice - Math.PI/2;
     const end = start + slice;
 
     // 섹션
@@ -1588,13 +1588,19 @@ function spinWheel() {
       state.isSpinning = false;
       document.getElementById('spin-btn').disabled = false;
 
-      // 결과 계산
-      // drawWheel: 섹션 i의 시작각 = wheelAngle + i*slice
-      // 포인터는 상단(-π/2) 고정
-      // 포인터가 몇 번째 섹션에 있는지: (-π/2 - wheelAngle)을 [0,2π)로 정규화
+      // 결과 계산 - drawWheel과 완전히 동일한 로직으로 포인터(상단 -π/2)가 가리키는 섹션 탐색
       const slice = (Math.PI * 2) / foods.length;
-      const relAngle = ((-Math.PI / 2 - state.wheelAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      const idx = Math.floor(relAngle / slice) % foods.length;
+      const pointer = -Math.PI / 2;
+      let resultIdx = 0;
+      let minDiff = Infinity;
+      for (let i = 0; i < foods.length; i++) {
+        const start = state.wheelAngle + i * slice - Math.PI / 2;
+        let diff = (pointer - start) % (Math.PI * 2);
+        if (diff < 0) diff += Math.PI * 2;
+        if (diff < slice) { resultIdx = i; break; }
+        if (diff < minDiff) { minDiff = diff; resultIdx = i; }
+      }
+      const idx = resultIdx;
       state.rouletteResult = foods[idx];
 
       document.getElementById('result-food').textContent = state.rouletteResult;
