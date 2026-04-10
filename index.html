@@ -1588,10 +1588,13 @@ function spinWheel() {
       state.isSpinning = false;
       document.getElementById('spin-btn').disabled = false;
 
-      // 결과 계산 (포인터 = 상단 = -π/2)
+      // 결과 계산
+      // drawWheel: 섹션 i의 시작각 = wheelAngle + i*slice - π/2
+      // 포인터는 상단(-π/2)을 가리킴
+      // (-π/2 - wheelAngle)을 양수 각도로 정규화 → 몇 번째 섹션인지 계산
       const slice = (Math.PI * 2) / foods.length;
-      const normalized = (((-state.wheelAngle - Math.PI/2) % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-      const idx = Math.floor(normalized / slice) % foods.length;
+      const relAngle = ((-Math.PI / 2 - state.wheelAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      const idx = Math.floor(relAngle / slice) % foods.length;
       state.rouletteResult = foods[idx];
 
       document.getElementById('result-food').textContent = state.rouletteResult;
