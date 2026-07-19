@@ -1828,20 +1828,40 @@ function clearMarkers() {
   nearbyMarkers = [];
 }
 
+// SDK 로드는 성공/실패(false)를 모두 resolve 한다.
+// (도메인 미등록·오프라인·차단 시 onload가 안 오므로 onerror + 타임아웃 필수)
 function loadKakaoSDK() {
   return new Promise((resolve) => {
-    if (kakaoReady) { resolve(); return; }
+    if (kakaoReady) { resolve(true); return; }
     const script = document.createElement('script');
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services&autoload=false`;
+    let settled = false;
+    const finish = (ok) => { if (!settled) { settled = true; resolve(ok); } };
+    const timer = setTimeout(() => finish(false), 8000);
     script.onload = () => {
-      kakao.maps.load(() => { kakaoReady = true; resolve(); });
+      try {
+        kakao.maps.load(() => { kakaoReady = true; clearTimeout(timer); finish(true); });
+      } catch (e) { clearTimeout(timer); finish(false); }
     };
+    script.onerror = () => { clearTimeout(timer); finish(false); };
     document.head.appendChild(script);
   });
 }
 
 async function renderNearby() {
-  await loadKakaoSDK();
+  const mapOk = await loadKakaoSDK();
+  if (!mapOk) {
+    document.getElementById('nearby-count').textContent = '⚠️ 지도를 불러오지 못했어요';
+    document.getElementById('nearby-list').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🗺️</div>
+        <div class="empty-text">지도 서비스에 연결하지 못했어요.<br>인터넷 연결을 확인한 뒤 다시 시도해주세요.</div>
+      </div>
+      <div style="padding:0 0 12px;">
+        <button class="btn-primary" onclick="renderNearby()">🔄 다시 시도</button>
+      </div>`;
+    return;
+  }
 
   // 지도 초기화 (한 번만) - 서울 시청 기본값
   if (!kakaoMap) {

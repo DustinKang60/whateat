@@ -1,5 +1,5 @@
 // 오늘 뭐 먹지? — Service Worker
-const CACHE_NAME = 'whateat-v4';
+const CACHE_NAME = 'whateat-v5';
 const ASSETS = [
   '/whateat/',
   '/whateat/index.html',
